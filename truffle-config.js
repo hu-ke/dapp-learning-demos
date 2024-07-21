@@ -1,4 +1,3 @@
-
 module.exports = {
   networks: {
     development: {
@@ -12,5 +11,7 @@ module.exports = {
     solc: {
       version: "0.8.0",      // Fetch exact version from solc-bin (default: truffle's version)
     }
-  }
+  },
+  // 指定合约构建文件保存的目录
+  contracts_build_directory: "./src/contracts",
 };
