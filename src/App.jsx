@@ -1,80 +1,110 @@
-import React, { useState, useEffect } from 'react';
-import getWeb3 from './utils/getWeb3';
-import DeFiContract from './contracts/DeFiContract.json';
+import "./styles.css";
+import { useCallback, useEffect, useState } from "react";
 
-const App = () => {
+// 1️⃣ Finish getProfile() function to check if profileInstance exists
+// 2️⃣ Complete createProfile() function in ProfileCreation.js to create profile for a new profileInstance
+// 3️⃣ Set the correct profileInstanceAddress and twitterInstanceAddress in Connect.js
+
+import Tweets from "./components/Tweets";
+import AddTweet from "./components/AddTweet";
+import Connect from "./components/Connect";
+import ProfileCreation from "./components/ProfileCreation";
+
+export default function App() {
+  const [account, setAccount] = useState(null);
+  const [profileExists, setProfileExists] = useState(null);
   const [web3, setWeb3] = useState(null);
-  const [accounts, setAccounts] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [balance, setBalance] = useState('0');
-  const [depositAmount, setDepositAmount] = useState('');
+  const [twitterInstance, setTwitterInstance] = useState(null);
+  const [profileInstance, setProfileInstance] = useState(null);
+  const [tweets, setTweets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const getTweets = useCallback(async function() {
+    if (!web3 || !twitterInstance) {
+      console.error("Web3 or twitterInstance not initialized.");
+      return;
+    }
+
+    const tempTweets = await twitterInstance.methods.getAllTweets(account).call();
+    // we do this so we can sort the tweets by timestamp
+    const tweets = [...tempTweets];
+    // tweets.sort((a, b) => b.timestamp - a.timestamp);
+    setTweets(tweets);
+    setLoading(false);
+  }, [account, twitterInstance, web3])
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const web3 = await getWeb3();
-        const accounts = await web3.eth.getAccounts();
-        const networkId = await web3.eth.net.getId();
-        const deployedNetwork = DeFiContract.networks[networkId];
-        const instance = new web3.eth.Contract(
-          DeFiContract.abi,
-          deployedNetwork && deployedNetwork.address,
-        );
+    if (profileInstance) {
+      getProfile()
+    }
+  }, [profileInstance])
 
-        setWeb3(web3);
-        setAccounts(accounts);
-        setContract(instance);
+  async function getProfile() {
+    if (!web3 || !profileInstance || !account) {
+      console.error(
+        "Web3 or profileInstance not initialized or account not connected."
+      );
+      return;
+    }
+    const profile = await profileInstance.methods.getProfile(account).call();
+    setLoading(false);
+    return profile.displayName;
+  }
 
-        const balance = await instance.methods.getBalance().call({ from: accounts[0] });
-        setBalance(web3.utils.fromWei(balance, 'ether'));
-      } catch (error) {
-        console.error(error);
+  const checkProfile = useCallback(async function checkProfile() {
+    const profileName = await getProfile(account);
+    setProfileExists(profileName);
+  }, [account, getProfile])
+
+  useEffect(() => {
+    if (twitterInstance && account) {
+      if (profileExists) {
+        getTweets();
+      } else {
+        checkProfile();
       }
-    };
-    init();
-  }, []);
-
-  const handleDeposit = async () => {
-    if (contract) {
-      const amount = web3.utils.toWei(depositAmount, 'ether');
-      await contract.methods.deposit().send({ from: accounts[0], value: amount });
-      const balance = await contract.methods.getBalance().call({ from: accounts[0] });
-      setBalance(web3.utils.fromWei(balance, 'ether'));
-      setDepositAmount('');
     }
-  };
+  }, [twitterInstance, account, profileExists, getTweets, checkProfile]);
 
-  const handleWithdraw = async () => {
-    if (contract) {
-      const amount = web3.utils.toWei(depositAmount, 'ether');
-      await contract.methods.withdraw(amount).send({ from: accounts[0] });
-      const balance = await contract.methods.getBalance().call({ from: accounts[0] });
-      setBalance(web3.utils.fromWei(balance, 'ether'));
-      setDepositAmount('');
+  function shortAddress(address, startLength = 6, endLength = 4) {
+    if (address === account && profileExists) {
+      return profileExists;
+    } else if (address) {
+      return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
     }
-  };
-
-  if (!web3) {
-    return <div>Loading Web3, accounts, and contract...</div>;
   }
 
   return (
-    <div className="App">
-      <h1>DeFi App</h1>
-      <p>Account: {accounts && accounts[0]}</p>
-      <p>Balance: {balance} ETH</p>
-      <div>
-        <input
-          type="text"
-          value={depositAmount}
-          onChange={(e) => setDepositAmount(e.target.value)}
-          placeholder="Amount in ETH"
-        />
-        <button onClick={handleDeposit}>Deposit</button>
-        <button onClick={handleWithdraw}>Withdraw</button>
-      </div>
+    <div className="container">
+      <h1>Twitter DAPP</h1>
+      <Connect
+        web3={web3}
+        setWeb3={setWeb3}
+        account={account}
+        setAccount={setAccount}
+        setTwitterInstance={setTwitterInstance}
+        shortAddress={shortAddress}
+        setProfileInstance={setProfileInstance}
+      />
+      {!loading && account && profileExists ? (
+        <>
+          <AddTweet
+            twitterInstance={twitterInstance}
+            account={account}
+            getTweets={getTweets}
+          />
+          <Tweets tweets={tweets} shortAddress={shortAddress} />
+        </>
+      ) : (
+        account &&
+        !loading && (
+          <ProfileCreation
+            account={account}
+            profileInstance={profileInstance}
+            checkProfile={checkProfile}
+          />
+        )
+      )}
     </div>
   );
-};
-
-export default App;
+}
