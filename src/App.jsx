@@ -1,80 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import getWeb3 from './utils/getWeb3';
-import DeFiContract from './contracts/DeFiContract.json';
+import { ethers } from 'ethers';
+import MyNFT from './contracts/MyNFT.json';
 
-const App = () => {
-  const [web3, setWeb3] = useState(null);
-  const [accounts, setAccounts] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [balance, setBalance] = useState('0');
-  const [depositAmount, setDepositAmount] = useState('');
+const nftAddress = "0x69898db907682BEB2B8a21df631AB829B668e893"; // contract address
+
+function App() {
+  const [tokenURI, setTokenURI] = useState("");
+  const [nfts, setNfts] = useState([]);
+  const [account, setAccount] = useState(null);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const web3 = await getWeb3();
-        const accounts = await web3.eth.getAccounts();
-        const networkId = await web3.eth.net.getId();
-        const deployedNetwork = DeFiContract.networks[networkId];
-        const instance = new web3.eth.Contract(
-          DeFiContract.abi,
-          deployedNetwork && deployedNetwork.address,
-        );
-
-        setWeb3(web3);
-        setAccounts(accounts);
-        setContract(instance);
-
-        const balance = await instance.methods.getBalance().call({ from: accounts[0] });
-        setBalance(web3.utils.fromWei(balance, 'ether'));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    init();
+    loadNFTs();
   }, []);
 
-  const handleDeposit = async () => {
-    if (contract) {
-      const amount = web3.utils.toWei(depositAmount, 'ether');
-      await contract.methods.deposit().send({ from: accounts[0], value: amount });
-      const balance = await contract.methods.getBalance().call({ from: accounts[0] });
-      setBalance(web3.utils.fromWei(balance, 'ether'));
-      setDepositAmount('');
-    }
-  };
+  async function requestAccount() {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    setAccount(accounts[0]);
+  }
 
-  const handleWithdraw = async () => {
-    if (contract) {
-      const amount = web3.utils.toWei(depositAmount, 'ether');
-      await contract.methods.withdraw(amount).send({ from: accounts[0] });
-      const balance = await contract.methods.getBalance().call({ from: accounts[0] });
-      setBalance(web3.utils.fromWei(balance, 'ether'));
-      setDepositAmount('');
+  async function mintNFT() {
+    if (!tokenURI) return;
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      console.log('start minting')
+      const contract = new ethers.Contract(nftAddress, MyNFT.abi, signer);
+      const transaction = await contract.mintNFT(signer.getAddress(), tokenURI);
+      await transaction.wait();
+      console.log('after minting')
+      loadNFTs();
     }
-  };
+  }
 
-  if (!web3) {
-    return <div>Loading Web3, accounts, and contract...</div>;
+  async function loadNFTs() {
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const contract = new ethers.Contract(nftAddress, MyNFT.abi, provider);
+      const totalSupply = await contract.totalSupply();
+      console.log('totalSupply', totalSupply)
+      const items = [];
+      for (let i = 1; i <= totalSupply; i++) {
+        const tokenURI = await contract.tokenURI(i);
+        const owner = await contract.ownerOf(i);
+        items.push({ tokenId: i, tokenURI, owner: owner.toLowerCase() });
+      }
+      console.log('nfts>', nfts)
+      setNfts(items);
+    }
+  }
+
+  async function transferNFT(to, tokenId) {
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(nftAddress, MyNFT.abi, signer);
+      const transaction = await contract.transferNFT(account, to, tokenId);
+      await transaction.wait();
+      loadNFTs();
+    }
   }
 
   return (
     <div className="App">
-      <h1>DeFi App</h1>
-      <p>Account: {accounts && accounts[0]}</p>
-      <p>Balance: {balance} ETH</p>
-      <div>
+      <header className="App-header">
         <input
-          type="text"
-          value={depositAmount}
-          onChange={(e) => setDepositAmount(e.target.value)}
-          placeholder="Amount in ETH"
+          onChange={e => setTokenURI(e.target.value)}
+          placeholder="Enter token URI"
         />
-        <button onClick={handleDeposit}>Deposit</button>
-        <button onClick={handleWithdraw}>Withdraw</button>
-      </div>
+        <button onClick={requestAccount}>Connect Wallet</button>
+        <button onClick={mintNFT}>Mint NFT</button>
+        {JSON.stringify(nfts[0])}
+        <div>
+          {nfts.map((nft, index) => (
+            <div key={index}>
+              <img src={nft.tokenURI} alt={`NFT ${nft.tokenId}`} width="200" />
+              <p>Owner: {nft.owner}</p>
+              <p>Account: {account}</p>
+              {nft.owner === account ? (
+                <input
+                  placeholder="Enter recipient address"
+                  onBlur={(e) => transferNFT(e.target.value, nft.tokenId)}
+                />
+              ) : 'null'}
+            </div>
+          ))}
+        </div>
+      </header>
     </div>
   );
-};
+}
 
 export default App;
