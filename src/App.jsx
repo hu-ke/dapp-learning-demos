@@ -1,43 +1,75 @@
-import React, { useEffect } from 'react';
-import { create } from '@web3-storage/w3up-client'
+import React, { useEffect, useState } from 'react';
+import { Tabs, Button, Form, Modal, Input } from 'antd';
+import './App.css';
+import Account from './components/Account';
 
 const App = () => {
-
-  const handleFileChange = async(e) => {
-    // @ts-ignore
-    let file = e?.target?.files[0]
-    console.log('file', file)
-    const client = await create()
-    await client.login('hu-ke@hotmail.com')
-    await client.setCurrentSpace('did:key:z6MkgavdgRcmrjkXDt6HbKc5926cn8r3cqGFkG2JiWst4DBd')
-    const directoryCid = await client.uploadFile(file)
-    console.log('directoryCid', directoryCid)
-  }
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [form] = Form.useForm();
 
   useEffect(() => {
-    const init = async() => {
-      // console.log('init')
-      // const client = await create()
-      // // await client.authorize('hu-ke@hotmail.com')
-      // console.log(client)
-      // try {
-      //   await client.login('hu-ke@hotmail.com')
-      //   // await client.registerSpace('hu-ke@hotmail.com', { provider: 'did:key:z6MkgavdgRcmrjkXDt6HbKc5926cn8r3cqGFkG2JiWst4DBd' })
-      //   await client.setCurrentSpace('did:key:z6MkgavdgRcmrjkXDt6HbKc5926cn8r3cqGFkG2JiWst4DBd')
-      //   const file = new File(['testcss'], './index.css')
-        
-      //   const directoryCid = await client.uploadFile(file)
-      //   console.log('directoryCid', directoryCid)
-      // } catch (err) {
-      //   console.error('registration failed: ', err)
-      // }
-    }
-    init()
   }, []);
+
+  const createNFT = () => {
+    setIsModalVisible(true)
+  }
+
+  const items = [
+    {
+      key: '1',
+      label: 'Trending NFTs',
+      children: 'Content of Tab Pane 1',
+    },
+    {
+      key: '2',
+      label: 'My NFTs',
+      children: (
+        <div onClick={createNFT}>
+          You don't have any NFTs, please <Button type="primary">create a NFT and deploy</Button>
+        </div>
+      ),
+    }
+  ];
+
+  const onChange = () => {
+
+  }
+
+  const handleOk = () => {
+    setIsModalVisible(false)
+  }
+  const handleCancel = () => {
+    setIsModalVisible(false)
+  }
+
 
   return (
     <div className="App">
-      <input type="file" id="fileInput" onChange={handleFileChange} />
+      <Account />
+      <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
+      <Modal 
+        title="Create a NFT" 
+        open={isModalVisible} 
+        onOk={handleOk} 
+        onCancel={handleCancel} 
+        width={850}
+        okText={'Create'}
+      >
+        <Form form={form} layout="vertical" name="userForm">
+          <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input your name!' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea />
+          </Form.Item>
+          <Form.Item name="price" label="Price" rules={[{ required: true, message: 'Please input your price!' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="cid-image" label="Paste your IPFS image link">
+            <Input placeholder='https://ipfs.io/ipfs/bafybeicn7i3soqdgr7dwnrwytgq4zxy7a5jpkizrvhm5mv6bgjd32wm3q4/welcome-to-IPFS.jpg'/>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
