@@ -1,37 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { Tabs, Button, Form, Modal, Input, InputNumber, Card, message, Popconfirm } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Tabs, Button, Card } from 'antd';
 import './App.css';
 import Account from './components/Account';
-import { deleteNFT, createNFT, getTrendingNFTs, getMyNFTs } from './utils/http'
-
-const { Meta } = Card;
+import { getMintedNFTs } from './utils/http'
+import MyNFTs from './pages/MyNFTs';
+import { ethers } from 'ethers';
+import MyNFTContract from './contracts/MyNFT.json'
+import shortAddress from './utils/shortAddress'
 
 const TAB_KEYS = {
   TRENDING_NFTS: '1',
   MY_NFTS: '2'
 }
 
-
 const App = () => {
-  const defaultIPFSImage = 'https://ipfs.io/ipfs/bafybeicn7i3soqdgr7dwnrwytgq4zxy7a5jpkizrvhm5mv6bgjd32wm3q4/welcome-to-IPFS.jpg'
-  const [messageApi, contextHolder] = message.useMessage();
-  const [isModalVisible, setIsModalVisible] = useState(false)
-  const [form] = Form.useForm();
   const [account, setAccount] = useState()
   const [activeTabKey, setActiveTabKey] = useState(TAB_KEYS.TRENDING_NFTS)
-  const [trendingNFTs, setTrendingNFTs] = useState([])
-  const [myNFTs, setMyNFTs] = useState([])
+  const [mintedNFTs, setMintedNFTs] = useState([])
+  const [uris, setURIs] = useState([])
+  const [nftContractInstance, setNFTContractInstance] = useState()
+  const [provider, setProvider] = useState()
 
-  const showCreatingForm = () => {
-    setIsModalVisible(true)
-  }
+  const buyNFT = (nft) => {
+    // 转移NFT
+    const transaction = await nftContractInstance.transferFrom(accountA, accountB, nftTokenId);
+    await transaction.wait();
+    console.log('NFT Transferred');
 
-  const clickDeleteNFT = async(nft) => {
-    let res = await deleteNFT(nft)
-    if (res.code === 200) {
-      messageApi.success(res.msg)
-      fetchMyNFTs()
-    }
+    // 转移资金
+    // const tx = {
+    //   to: accountA,
+    //   value: ethers.utils.parseEther(transferAmount)
+    // };
+    // const sendTransaction = await signer.sendTransaction(tx);
+    // await sendTransaction.wait();
+    // console.log('Funds Transferred');
   }
 
   const items = [
@@ -41,17 +44,26 @@ const App = () => {
       children: (
         <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
           {
-            trendingNFTs.length > 0 ? trendingNFTs.map(nft => {
+            mintedNFTs.length > 0 ? mintedNFTs.map(nft => {
               return (
                 <Card
+                  key={nft.id}
                   actions={[
-                    <Button type="primary">Buy</Button>,
+                    nft.account !== account ? <Button type="primary" onClick={() => { buyNFT(nft) }}>Buy</Button> : "My NFT"
                   ]}
                   hoverable
+                  styles={{
+                    body: {
+                      padding: 10
+                    }
+                  }}
                   style={{ width: 260 }}
                   cover={<img alt="nft image" src={nft.image} />}
                 >
-                  <Meta title={nft.name} description={nft.description} />
+                  <h2 style={{margin: 0}}>{nft.name}</h2>
+                  <div>{nft.description}</div>
+                  <div>price: {nft.price} ETH</div>
+                  <div>Owner: {shortAddress(nft.account)}</div>
                 </Card>
               )
             }) : ''
@@ -63,41 +75,7 @@ const App = () => {
       key: TAB_KEYS.MY_NFTS,
       label: 'My NFTs',
       children: (
-        myNFTs.length > 0 ? (
-          <div>
-            {
-              myNFTs.length > 0 ? myNFTs.map(nft => {
-                return (
-                  <Card
-                    actions={[
-                      <Popconfirm
-                        title="Delete the NFT"
-                        description="Are you sure to delete this NFT?"
-                        onConfirm={() => {
-                          clickDeleteNFT(nft)
-                        }}
-                        onCancel={() => {}}
-                        okText="Yes"
-                        cancelText="No"
-                      >
-                        <Button danger>Delete</Button>
-                      </Popconfirm>
-                    ]}
-                    hoverable
-                    style={{ width: 260 }}
-                    cover={<img alt="nft image" src={nft.image} />}
-                  >
-                    <Meta title={nft.name} description={nft.description} />
-                  </Card>
-                )
-              }) : ''
-            }  
-          </div>
-        ) : (
-          <div onClick={showCreatingForm}>
-            You don't have any NFTs, please <Button type="primary" disabled={!account}>create a NFT and deploy</Button>
-          </div>
-        )
+        <MyNFTs account={account} nftContractInstance={nftContractInstance} uris={uris} />
       ),
     }
   ];
@@ -106,93 +84,48 @@ const App = () => {
     setActiveTabKey(key)
   }
 
-  const fetchTrendingNFTs = async() => {
-    let res = await getTrendingNFTs()
-    if (res.code === 200) {
-      setTrendingNFTs(res.data)
-    }
-  }
+  const fetchURIs = async() => {
+    const contractAddress = '0x0c6D5a3840A9e3EC22e416cB9f64C230fCCd319f'
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    setProvider(provider)
+    const myNFTContract = new ethers.Contract(contractAddress, MyNFTContract.abi, provider)
+    setNFTContractInstance(myNFTContract)
 
-  const fetchMyNFTs = async() => {
-    let res = await getMyNFTs(account)
-    if (res.code === 200) {
-      setMyNFTs(res.data)
+    const totalSupply = await myNFTContract.totalSupply()
+    const uris = []
+
+    for (var i = 1; i <= totalSupply; i++) {
+      const uri = await myNFTContract.tokenURI(i)
+      uris.push(uri)
     }
+    setURIs(uris)
   }
 
   useEffect(() => {
-    if (activeTabKey === TAB_KEYS.TRENDING_NFTS) {
-      fetchTrendingNFTs()
-    } else {
-      fetchMyNFTs()
-    }
-  }, [activeTabKey])
+    fetchURIs()
+  }, [])
 
-  const handleOk = async() => {
-    try {
-      await form.validateFields()
-      let nft = form.getFieldsValue()
-      if (!nft.image) {
-        nft.image = defaultIPFSImage
-      }
-      let res = await createNFT(nft)
+  const fetchMintedNFTs = useCallback(async() => {
+    if (uris.length > 0 && activeTabKey === TAB_KEYS.TRENDING_NFTS) {
+      let res = await getMintedNFTs(uris)
       if (res.code === 200) {
-        messageApi.open({
-          type: 'success',
-          content: res.msg,
-        });
-        fetchMyNFTs()
+        setMintedNFTs(res.data)
       }
-      setIsModalVisible(false)
-    } catch(e) {
-      console.error('form validation error', e)
     }
-  }
-  const handleCancel = () => {
-    setIsModalVisible(false)
-  }
+  }, [uris, activeTabKey])
+
+  useEffect(() => {
+    fetchMintedNFTs()
+  }, [fetchMintedNFTs])
 
   const onConnected = (account) => {
     setAccount(account)
   }
 
-  useEffect(() => {
-    if (account && isModalVisible && form) {
-      form.setFieldValue('account', account)
-    }
-  }, [account, isModalVisible, form])
-
   return (
     <div className="App">
-      {contextHolder}
       <Account onConnected={onConnected} />
       <Tabs activeKey={activeTabKey} items={items} onChange={onChange} />
-      <Modal 
-        title="Create a NFT" 
-        open={isModalVisible} 
-        onOk={handleOk} 
-        onCancel={handleCancel} 
-        width={850}
-        okText={'Create'}
-      >
-        <Form form={form} layout="vertical" name="nftForm">
-          <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Please input your name!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="Description">
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item name="price" label="Price" rules={[{ required: true, message: 'Please input your price!' }]}>
-            <InputNumber min={0.00001} addonAfter='NFT' />
-          </Form.Item>
-          <Form.Item name="image" label="Paste your IPFS image link">
-            <Input placeholder={defaultIPFSImage} />
-          </Form.Item>
-          <Form.Item name="account" label="Account" hidden={true}>
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };
