@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from 'antd'
 import { ethers } from 'ethers';
 
-function Account() {
+function Account({onConnected}) {
   const [account, setAccount] = useState()
+  const [isConnecting, setIsConnecting] = useState(false)
 
   const connect = async() => {
     // const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -14,10 +15,20 @@ function Account() {
     setAccount(account);
   }
 
+  useEffect(() => {
+    connect()
+  }, [])
+
+  useEffect(() => {
+    if (account) {
+      onConnected && onConnected(account)
+    }
+  }, [account])
+
   return (
     <div style={{display: 'flex', flexDirection: 'row-reverse'}}>
       {
-        account ? `Connected: ${account}` : <Button type="primary" onClick={connect}>Connect to Wallet</Button>
+        account ? `Connected: ${account}` : <Button type="primary" onClick={connect} loading={isConnecting} disabled={isConnecting}>Connect to Wallet</Button>
       }
     </div>
   );
