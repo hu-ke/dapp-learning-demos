@@ -1,7 +1,8 @@
 import React, { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
-import { Button, Form, Modal, Input, InputNumber, Card, message, Popconfirm } from 'antd';
+import { Button, Form, Modal, Input, InputNumber, message } from 'antd';
 import { deleteNFT, createNFT, getMyNFTs } from '../utils/http'
 import { ethers } from 'ethers';
+import NFT from '../components/NFT'
 
 const MyNFTs = forwardRef(({account, nftContractInstance, uris}, ref) => {
   const [messageApi, contextHolder] = message.useMessage();
@@ -81,7 +82,6 @@ const MyNFTs = forwardRef(({account, nftContractInstance, uris}, ref) => {
           content: res.msg,
         });
         fetchMyNFTs()
-        mintNFT(nft)
         setIsModalVisible(false)
       } else if (res.code === 400) {
         messageApi.open({
@@ -105,54 +105,25 @@ const MyNFTs = forwardRef(({account, nftContractInstance, uris}, ref) => {
         myNFTs.length > 0 ? (
           <>
             <p><Button onClick={showCreatingForm} type="primary" disabled={!account}>create a NFT</Button></p>
-            <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+            <div className="main-nftwrap">
               {
                 myNFTs.map(nft => {
                   return (
-                    <Card
-                      key={nft.id}
-                      actions={[
-                        <Popconfirm
-                          title="Delete the NFT"
-                          description="Are you sure to delete this NFT?"
-                          onConfirm={() => {
-                            clickDeleteNFT(nft)
-                          }}
-                          onCancel={() => {}}
-                          okText="Yes"
-                          cancelText="No"
-                        >
-                          <Button danger>Delete</Button>
-                        </Popconfirm>,
-                        
-                        uris.includes(nft.image) ? (
-                          <Button disabled type="text">Minted</Button>
-                        ) : (
-                          <Button type="primary" onClick={() => {
-                            mintNFT(nft)
-                          }}>Mint</Button>
-                        )
-                      ]}
-                      hoverable
-                      style={{ width: 260 }}
-                      styles={{
-                        body: {
-                          padding: 10
-                        }
-                      }}
-                      cover={<img alt="nft image" src={nft.image} />}
-                    >
-                      <h2 style={{margin: 0}}>{nft.name}</h2>
-                      <div>{nft.description}</div>
-                      <div>price: {nft.price} ETH</div>
-                    </Card>
+                    <NFT 
+                      key={nft.id} 
+                      nft={nft} 
+                      isOwner={account === nft.account}
+                      isMinted={uris.includes(nft.image)}
+                      handleDelete={clickDeleteNFT}
+                      handleMint={mintNFT}
+                    />
                   )
                 })
               }
             </div>
           </>
         ) : (
-          <div onClick={showCreatingForm}>
+          <div onClick={showCreatingForm} style={{ marginTop: 10 }}>
             You don't have any NFTs, please <Button type="primary" disabled={!account}>create a NFT</Button>
           </div>
         )
