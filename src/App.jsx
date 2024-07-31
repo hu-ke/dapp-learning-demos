@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import MyNFTContract from './contracts/MyNFT.json'
 import shortAddress from './utils/shortAddress'
 import NFT from './components/NFT'
+import { message } from 'antd';
 
 const TAB_KEYS = {
   TRENDING_NFTS: '1',
@@ -14,6 +15,7 @@ const TAB_KEYS = {
 }
 
 const App = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [account] = useAccountHook()
   const [activeTabKey, setActiveTabKey] = useState(TAB_KEYS.TRENDING_NFTS)
   const [mintedNFTs, setMintedNFTs] = useState([])
@@ -91,6 +93,7 @@ const App = () => {
 
   return (
     <div className="App">
+      {contextHolder}
       <div className="bg-wrap">
         <img style={{width: '100%', height: '100%', objectFit: 'cover'}} src="https://i.seadn.io/gcs/files/b506eaca01f32365901c233181e69d93.png?auto=format&dpr=1&w=3840" />
         <div className="bg-wrap-mask"></div>
