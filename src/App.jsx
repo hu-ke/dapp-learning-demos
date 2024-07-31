@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import useAccountHook from './hooks/useAccountHook';
-import { getMintedNFTs } from './utils/http'
+import { getMintedNFTs, updateNFTAccount } from './utils/http'
 import MyNFTs from './pages/MyNFTs';
 import { ethers } from 'ethers';
 import MyNFTContract from './contracts/MyNFT.json'
@@ -34,9 +34,12 @@ const App = () => {
     console.log('tokenId', tokenId)
     try {
       const transaction2 = await nftContractInstance.connect(signer).buyNFT(tokenId, { value: priceInWei });
-      console.log('Transaction sent, waiting for confirmation...', transaction2)
-      let res = await transaction2.wait();
-      console.log('Transaction confirmed!', res)
+      console.log('Transaction sent, waiting for confirmation...')
+      await transaction2.wait();
+      messageApi.success('transaction is successful.')
+      let res = await updateNFTAccount(nft.id, account)
+      console.log('res')
+      console.log('Transaction confirmed!')
     } catch(e) {
       console.error(e)
     } finally {
@@ -49,9 +52,7 @@ const App = () => {
   }
 
   const fetchURIs = async() => {
-    // const contractAddress = '0x0c6D5a3840A9e3EC22e416cB9f64C230fCCd319f'
-    // const contractAddress = '0xE9dE7C62A992613Cae2E2Cb1b4F62cE0a421dc36';
-    const contractAddress = '0xF025a4D5c24D2C2A766454Ae4d5bd46102bD8d9D'
+    const contractAddress = '0x5161Fb78ee6D113fBAEb325c18fA391b69D4AC06'
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     setProvider(provider)
     const myNFTContract = new ethers.Contract(contractAddress, MyNFTContract.abi, provider)

@@ -16,9 +16,10 @@ contract MyNFT is ERC721URIStorage {
 
     mapping(uint256 => NFT) public nfts;
     mapping(string => uint256) private _tokenIdsByURI;
+    mapping(address => uint256[]) private _ownedTokens;
+    mapping(uint256 => uint256) private _ownedTokensIndex;
 
     constructor() ERC721("MyNFT", "MNFT") {}
-
 
     function setForSale(uint256 tokenId, uint256 price) internal {
         require(ownerOf(tokenId) == msg.sender, "You are not the owner");
@@ -33,6 +34,7 @@ contract MyNFT is ERC721URIStorage {
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
         _tokenIdsByURI[tokenURI] = newItemId;
+        _addTokenToOwnerEnumeration(msg.sender, newItemId);
         setForSale(newItemId, price);
 
         return newItemId;
@@ -58,6 +60,40 @@ contract MyNFT is ERC721URIStorage {
     function getTokenIdByTokenURI(string memory tokenURI) public view returns (uint256) {
         require(_tokenIdsByURI[tokenURI] != 0, "Token URI does not exist");
         return _tokenIdsByURI[tokenURI];
+    }
+
+    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
+        _ownedTokensIndex[tokenId] = _ownedTokens[to].length;
+        _ownedTokens[to].push(tokenId);
+    }
+
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
+        uint256 lastTokenIndex = _ownedTokens[from].length - 1;
+        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+            _ownedTokens[from][tokenIndex] = lastTokenId;
+            _ownedTokensIndex[lastTokenId] = tokenIndex;
+        }
+
+        _ownedTokens[from].pop();
+        delete _ownedTokensIndex[tokenId];
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal virtual override {
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+
+        if (from != address(0)) {
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+        if (to != address(0)) {
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+    }
+
+    function getTokensOfOwner(address owner) public view returns (uint256[] memory) {
+        return _ownedTokens[owner];
     }
 
     function totalSupply() public view returns (uint256) {

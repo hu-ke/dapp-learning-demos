@@ -12,6 +12,14 @@ export const deleteNFT = async(nft) => {
     return data
 }
 
+export const updateNFTAccount = async(nftId, account) => {
+    let { data } = await axios.post(`${baseUrl}/updateNFTAccount`, {
+        nftId,
+        account
+    })
+    return data
+}
+
 export const getMintedNFTs = async(uris) => {
     let { data } = await axios.post(`${baseUrl}/getMintedNFTs`, uris)
     return data
