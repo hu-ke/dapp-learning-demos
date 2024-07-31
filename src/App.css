@@ -47,7 +47,7 @@
 .bg-wrap-account {
     position: absolute;
     top: 20px;
-    right: 200px;
+    right: 280px;
     height: 48px;
     /* width: 200px; */
     color: inherit;
@@ -58,6 +58,16 @@
     display: flex;
     align-items: center;
     padding: 0 8px;
+}
+.bg-wrap-github {
+    cursor: pointer;
+    position: absolute;
+    top: 20px;
+    right: 150px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    color: #fff;
 }
 .bg-wrap-slogan {
     position: absolute;
