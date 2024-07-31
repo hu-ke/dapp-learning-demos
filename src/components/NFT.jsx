@@ -7,8 +7,8 @@ function NFT({ nft, isOwner, isMinted, handleDelete, handleMint, handleBuy, isMi
   return (
     <article className="nft-item">
       <div className="nft-item-imgwrap">
-      <img className="nft-item-img" src="https://i.seadn.io/gcs/files/826927715dc6bfe4760349751066f873.png?auto=format&dpr=1&w=384" />
-        {/* <img className="nft-item-img" src={nft.image} /> */}
+      {/* <img className="nft-item-img" src="https://i.seadn.io/gcs/files/826927715dc6bfe4760349751066f873.png?auto=format&dpr=1&w=384" /> */}
+        <img className="nft-item-img" src={nft.image} />
       </div>
       <div className="nft-item-name">{nft.name}</div>
       <div className="nft-item-description">{nft.description}</div>
