@@ -1,9 +1,9 @@
 import React from 'react';
 import './NFT.css';
 import shortAddress from '../utils/shortAddress';
-import { Popconfirm } from 'antd';
+import { Popconfirm, Button } from 'antd';
 
-function NFT({ nft, isOwner, isMinted, handleDelete, handleMint }) {
+function NFT({ nft, isOwner, isMinted, handleDelete, handleMint, handleBuy, isMinting, isBuying }) {
   return (
     <article className="nft-item">
       <div className="nft-item-imgwrap">
@@ -16,7 +16,7 @@ function NFT({ nft, isOwner, isMinted, handleDelete, handleMint }) {
       <div className="nft-item-owner">Owner: {shortAddress(nft.account)}</div>
       <div className="nft-item-actions">
         {
-          !isOwner ? (<div className="nft-item-actions-btn buy" onClick={() => { handleBuy(nft) }}>Buy</div>) : (
+          !isOwner ? (<div className="nft-item-actions-btn buy" onClick={() => { handleBuy(nft) }}><Button loading={isBuying} disabled={isBuying} type="link" style={{color: '#fff', fontWeight: 600}}>Buy</Button></div>) : (
             <>
               <Popconfirm
                 title="Delete the NFT"
@@ -31,7 +31,7 @@ function NFT({ nft, isOwner, isMinted, handleDelete, handleMint }) {
                 <div className="nft-item-actions-btn delete">Delete</div>
               </Popconfirm>
               {
-                isMinted ? (<div className="nft-item-actions-btn minted">Minted</div>) : (<div className="nft-item-actions-btn mint" onClick={() => { handleMint(nft) }}>Mint</div>)
+                isMinted ? (<div className="nft-item-actions-btn minted">Minted</div>) : (<div className="nft-item-actions-btn mint" onClick={() => { handleMint(nft) }}><Button loading={isMinting} disabled={isMinting} type="link" style={{color: '#fff', fontWeight: 600}}>Mint</Button></div>)
               }
             </>
           )

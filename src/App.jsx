@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Tabs, Button, Card } from 'antd';
 import './App.css';
 import useAccountHook from './hooks/useAccountHook';
 import { getMintedNFTs } from './utils/http'
@@ -21,72 +20,38 @@ const App = () => {
   const [uris, setURIs] = useState([])
   const [nftContractInstance, setNFTContractInstance] = useState()
   const [provider, setProvider] = useState()
+  const [isBuying, setIsBuying] = useState(false)
+  const [currentBuyingNFT, setCurrentBuyingNFT] = useState()
 
   const buyNFT = async(nft) => {
-    // 转移NFT
-    const transaction = await nftContractInstance.transferFrom(accountA, accountB, nftTokenId);
-    await transaction.wait();
-    console.log('NFT Transferred');
-
-    // 转移资金
-    // const tx = {
-    //   to: accountA,
-    //   value: ethers.utils.parseEther(transferAmount)
-    // };
-    // const sendTransaction = await signer.sendTransaction(tx);
-    // await sendTransaction.wait();
-    // console.log('Funds Transferred');
-  }
-
-  const items = [
-    {
-      key: TAB_KEYS.TRENDING_NFTS,
-      label: 'Trending NFTs',
-      children: (
-        <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-          {
-            mintedNFTs.length > 0 ? mintedNFTs.map(nft => {
-              return (
-                <Card
-                  key={nft.id}
-                  actions={[
-                    nft.account !== account ? <Button type="primary" onClick={() => { buyNFT(nft) }}>Buy</Button> : "My NFT"
-                  ]}
-                  hoverable
-                  styles={{
-                    body: {
-                      padding: 10
-                    }
-                  }}
-                  style={{ width: 260 }}
-                  cover={<img alt="nft image" src={nft.image} />}
-                >
-                  <h2 style={{margin: 0}}>{nft.name}</h2>
-                  <div>{nft.description}</div>
-                  <div>price: {nft.price} ETH</div>
-                  <div>Owner: {shortAddress(nft.account)}</div>
-                </Card>
-              )
-            }) : ''
-          }
-        </div>
-      ),
-    },
-    {
-      key: TAB_KEYS.MY_NFTS,
-      label: 'My NFTs',
-      children: (
-        <MyNFTs account={account} nftContractInstance={nftContractInstance} uris={uris} />
-      ),
+    setIsBuying(true)
+    setCurrentBuyingNFT(nft)
+    const priceInWei = ethers.utils.parseEther(`${nft.price}`); // 将ETH转换为Wei
+    console.log('priceInWei', priceInWei)
+    let signer = await provider.getSigner() // equals to account
+    console.log('signer', signer)
+    let tokenId = await nftContractInstance.connect(signer).getTokenIdByTokenURI(nft.image)
+    console.log('tokenId', tokenId)
+    try {
+      const transaction2 = await nftContractInstance.connect(signer).buyNFT(tokenId, { value: priceInWei });
+      console.log('Transaction sent, waiting for confirmation...', transaction2)
+      let res = await transaction2.wait();
+      console.log('Transaction confirmed!', res)
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setIsBuying(false)
     }
-  ];
+  }
 
   const onTabChange = (key) => {
     setActiveTabKey(key)
   }
 
   const fetchURIs = async() => {
-    const contractAddress = '0x0c6D5a3840A9e3EC22e416cB9f64C230fCCd319f'
+    // const contractAddress = '0x0c6D5a3840A9e3EC22e416cB9f64C230fCCd319f'
+    // const contractAddress = '0xE9dE7C62A992613Cae2E2Cb1b4F62cE0a421dc36';
+    const contractAddress = '0xF025a4D5c24D2C2A766454Ae4d5bd46102bD8d9D'
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     setProvider(provider)
     const myNFTContract = new ethers.Contract(contractAddress, MyNFTContract.abi, provider)
@@ -100,6 +65,10 @@ const App = () => {
       uris.push(uri)
     }
     setURIs(uris)
+  }
+
+  const doneMinting = (nft) => {
+    fetchURIs()
   }
 
   useEffect(() => {
@@ -150,13 +119,20 @@ const App = () => {
               {
                 mintedNFTs.length > 0 ? mintedNFTs.map(nft => {
                   return (
-                    <NFT key={nft.id} nft={nft} isOwner={account === nft.account} />
+                    <NFT 
+                      key={nft.id} 
+                      nft={nft} 
+                      isOwner={account === nft.account} 
+                      handleBuy={buyNFT}
+                      isMinted={uris.includes(nft.image)}
+                      isBuying={isBuying && currentBuyingNFT?.id === nft.id}
+                    />
                   )
                 }) : ''
               }
             </div>
           ) : (
-            <MyNFTs account={account} nftContractInstance={nftContractInstance} uris={uris} />
+            <MyNFTs account={account} nftContractInstance={nftContractInstance} uris={uris} doneMinting={doneMinting} />
           )
         }
       </div>

@@ -4,13 +4,15 @@ import { deleteNFT, createNFT, getMyNFTs } from '../utils/http'
 import { ethers } from 'ethers';
 import NFT from '../components/NFT'
 
-const MyNFTs = forwardRef(({account, nftContractInstance, uris}, ref) => {
+const MyNFTs = forwardRef(({account, nftContractInstance, uris, doneMinting}, ref) => {
   const [messageApi, contextHolder] = message.useMessage();
   // const defaultIPFSImage = 'https://ipfs.io/ipfs/bafybeicn7i3soqdgr7dwnrwytgq4zxy7a5jpkizrvhm5mv6bgjd32wm3q4/welcome-to-IPFS.jpg'
   const defaultIPFSImage = 'https://ipfs.io/ipfs/bafkreia3znv3i64sbqcsqfrpnsaeubaa4mpgwiq27w53mn4orzmz34dr6u'
   const [myNFTs, setMyNFTs] = useState([])
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm();
+  const [minting, setMinting] = useState(false)
+  const [currentNFT, setCurrentNFT] = useState()
 
   const mintNFT = async(nft) => {
     if (!nft) {
@@ -19,12 +21,22 @@ const MyNFTs = forwardRef(({account, nftContractInstance, uris}, ref) => {
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     let signer = await provider.getSigner() // equals to account
     console.log('nft.image', nft.image)
+    setMinting(true)
+    setCurrentNFT(nft)
     try {
-      let transaction = await nftContractInstance.connect(signer).mint(nft.image)
+      const priceInWei = ethers.utils.parseEther(`${nft.price}`); // 将ETH转换为Wei
+      console.log('priceInWei', priceInWei)
+      let transaction = await nftContractInstance.connect(signer).mint(nft.image, priceInWei)
       console.log('transaction', transaction)
       await transaction.wait()
+      messageApi.success('minted successfully, now others can buy the NFT.')
+      doneMinting(nft)
+      fetchMyNFTs()
     } catch(e) {
       console.error('mint error', e)
+      messageApi.error(e.messsage)
+    } finally {
+      setMinting(false)
     }
   }
 
@@ -116,6 +128,7 @@ const MyNFTs = forwardRef(({account, nftContractInstance, uris}, ref) => {
                       isMinted={uris.includes(nft.image)}
                       handleDelete={clickDeleteNFT}
                       handleMint={mintNFT}
+                      isMinting={minting && currentNFT?.id === nft.id}
                     />
                   )
                 })
