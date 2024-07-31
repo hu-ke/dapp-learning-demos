@@ -40,7 +40,8 @@ const App = () => {
       await transaction2.wait();
       messageApi.success('transaction is successful.')
       let res = await updateNFTAccount(nft.id, account)
-      console.log('res')
+      console.log('res', res)
+      fetchMintedNFTs()
       console.log('Transaction confirmed!')
     } catch(e) {
       console.error(e)

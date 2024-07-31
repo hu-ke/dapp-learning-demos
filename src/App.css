@@ -76,6 +76,10 @@
 .main-tabs {
     display: flex;
     gap: 30px;
+    background-color: rgba(18, 18, 18, 0.04);
+    padding: 6px;
+    border-radius: 6px;
+    width: 301px;
 }
 .main-tabs-item {
     font-weight: 600;
@@ -90,7 +94,7 @@
 }
 .main-tabs-item.active {
     color: rgb(18, 18, 18);
-    background-color: rgba(18, 18, 18, 0.04);
+    background-color: #fff;
 }
 .main-tabs-item:hover {
     color: rgb(18, 18, 18);
