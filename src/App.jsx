@@ -116,6 +116,10 @@ const App = () => {
         </a>
         <div className="bg-wrap-slogan">
           Discover, Trade, Own: Your Digital Collection Starts Here.
+          <p style={{fontSize: '16px', fontStyle: 'italic'}}>
+            <div style={{marginBottom: 4}}>Disclaimer:</div>
+            This website is used for the generation and trading of NFT assets on the <span style={{color: 'orange'}}>Sepolia network</span>. All transactions and operations conducted on this platform are executed using Sepolia testnet ETH and do not affect or consume ETH on the Ethereum Mainnet. Please be aware that Sepolia is a test network, and any ETH used here is purely for testing purposes and has no real-world value. Ensure that you are aware of this distinction when interacting with our platform.
+          </p>
         </div>
       </div>
       <div className="main">

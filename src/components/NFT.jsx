@@ -18,18 +18,22 @@ function NFT({ nft, isOwner, isMinted, handleDelete, handleMint, handleBuy, isMi
         {
           !isOwner ? (<div className="nft-item-actions-btn buy" onClick={() => { handleBuy(nft) }}><Button loading={isBuying} disabled={isBuying} type="link" style={{color: '#fff', fontWeight: 600}}>Buy</Button></div>) : (
             <>
-              <Popconfirm
-                title="Delete the NFT"
-                description="Are you sure to delete this NFT?"
-                onConfirm={() => {
-                  handleDelete(nft)
-                }}
-                onCancel={() => {}}
-                okText="Yes"
-                cancelText="No"
-              >
-                <div className="nft-item-actions-btn delete">Delete</div>
-              </Popconfirm>
+              {
+                isMinted ? '' : (
+                  <Popconfirm
+                    title="Delete the NFT"
+                    description="Are you sure to delete this NFT?"
+                    onConfirm={() => {
+                      handleDelete(nft)
+                    }}
+                    onCancel={() => {}}
+                    okText="Yes"
+                    cancelText="No"
+                  >
+                    <div className="nft-item-actions-btn delete">Delete</div>
+                  </Popconfirm>
+                )
+              }
               {
                 isMinted ? (<div className="nft-item-actions-btn minted">Minted</div>) : (<div className="nft-item-actions-btn mint" onClick={() => { handleMint(nft) }}><Button loading={isMinting} disabled={isMinting} type="link" style={{color: '#fff', fontWeight: 600}}>Mint</Button></div>)
               }
