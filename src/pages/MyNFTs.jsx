@@ -6,8 +6,7 @@ import NFT from '../components/NFT'
 
 const MyNFTs = forwardRef(({account, nftContractInstance, uris, doneMinting}, ref) => {
   const [messageApi, contextHolder] = message.useMessage();
-  // const defaultIPFSImage = 'https://ipfs.io/ipfs/bafybeicn7i3soqdgr7dwnrwytgq4zxy7a5jpkizrvhm5mv6bgjd32wm3q4/welcome-to-IPFS.jpg'
-  const defaultIPFSImage = 'https://ipfs.io/ipfs/bafkreia3znv3i64sbqcsqfrpnsaeubaa4mpgwiq27w53mn4orzmz34dr6u'
+  const defaultIPFSImage = 'https://ipfs.io/ipfs/bafybeicn7i3soqdgr7dwnrwytgq4zxy7a5jpkizrvhm5mv6bgjd32wm3q4/welcome-to-IPFS.jpg'
   const [myNFTs, setMyNFTs] = useState([])
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm();
