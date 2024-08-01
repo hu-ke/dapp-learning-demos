@@ -157,7 +157,12 @@ const MyNFTs = forwardRef(({account, nftContractInstance, uris, doneMinting}, re
             <Input.TextArea />
           </Form.Item>
           <Form.Item name="price" label="Price" rules={[{ required: true, message: 'Please input your price!' }]}>
-            <InputNumber min={0.00001} addonAfter='NFT' />
+            <InputNumber 
+              min={0.00001} 
+              precision={5}
+              step={0.00001} 
+              addonAfter='NFT' 
+            />
           </Form.Item>
           <Form.Item name="image" label="Paste your IPFS image link">
             <Input placeholder={defaultIPFSImage} />

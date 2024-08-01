@@ -55,7 +55,8 @@ const App = () => {
   }
 
   const fetchURIs = async() => {
-    const contractAddress = '0x5161Fb78ee6D113fBAEb325c18fA391b69D4AC06'
+    // const contractAddress = '0x5161Fb78ee6D113fBAEb325c18fA391b69D4AC06'
+    const contractAddress = '0x0677E4Dd20De385a986eDA724E03395b6e7A7199' // sepolia test network address
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     setProvider(provider)
     const myNFTContract = new ethers.Contract(contractAddress, MyNFTContract.abi, provider)
